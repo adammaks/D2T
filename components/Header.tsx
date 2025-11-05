@@ -1,11 +1,35 @@
 import React from 'react';
+import { User, UserRole } from '../types';
 
 interface HeaderProps {
-  isAdminMode: boolean;
-  setIsAdminMode: (isAdmin: boolean) => void;
+  currentUser: User | null;
+  onLogin: () => void;
+  onLogout: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ isAdminMode, setIsAdminMode }) => {
+const Header: React.FC<HeaderProps> = ({ currentUser, onLogin, onLogout }) => {
+  const getRoleLabel = (role: UserRole): string => {
+    switch (role) {
+      case UserRole.ADMIN:
+        return 'Админ';
+      case UserRole.MODERATOR:
+        return 'Модератор';
+      default:
+        return 'Пользователь';
+    }
+  };
+
+  const getRoleColor = (role: UserRole): string => {
+    switch (role) {
+      case UserRole.ADMIN:
+        return 'text-red-400';
+      case UserRole.MODERATOR:
+        return 'text-yellow-400';
+      default:
+        return 'text-gray-400';
+    }
+  };
+
   return (
     <header className="bg-gray-900/80 backdrop-blur-sm sticky top-0 z-50 border-b border-gray-700/50">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
@@ -18,17 +42,30 @@ const Header: React.FC<HeaderProps> = ({ isAdminMode, setIsAdminMode }) => {
             <h1 className="text-2xl font-bold tracking-wider uppercase">adam_maks-tournament</h1>
         </div>
         <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-400">Admin Panel</span>
+          {currentUser ? (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400">Пользователь:</span>
+                <span className="text-sm font-semibold text-white">{currentUser.username}</span>
+                <span className={`text-sm font-semibold ${getRoleColor(currentUser.role)}`}>
+                  ({getRoleLabel(currentUser.role)})
+                </span>
+              </div>
+              <button
+                onClick={onLogout}
+                className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-md transition-colors"
+              >
+                Выйти
+              </button>
+            </>
+          ) : (
             <button
-                onClick={() => setIsAdminMode(!isAdminMode)}
-                className="relative inline-flex items-center h-6 rounded-full w-11 transition-colors bg-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-gray-900"
-                >
-                <span
-                    className={`${
-                    isAdminMode ? 'translate-x-6' : 'translate-x-1'
-                    } inline-block w-4 h-4 transform bg-white rounded-full transition-transform`}
-                />
+              onClick={onLogin}
+              className="bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-semibold py-2 px-4 rounded-md transition-colors"
+            >
+              Войти
             </button>
+          )}
         </div>
       </div>
     </header>

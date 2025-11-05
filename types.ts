@@ -34,3 +34,16 @@ export interface Tournament {
   standings: Standing[];
   matchHistory: Match[];
 }
+
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  MODERATOR = 'MODERATOR',
+  USER = 'USER',
+}
+
+export interface User {
+  id: string;
+  username: string;
+  password: string;
+  role: UserRole;
+}
