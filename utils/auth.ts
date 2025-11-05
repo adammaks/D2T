@@ -16,35 +16,55 @@ export const initializeDefaultAdmin = (): User => {
 
 // Загрузка пользователей из localStorage
 export const loadUsers = (): User[] => {
-  const stored = localStorage.getItem(STORAGE_KEY_USERS);
-  if (stored) {
-    return JSON.parse(stored);
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_USERS);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    
+    // Если пользователей нет, создаем начального админа
+    const defaultAdmin = initializeDefaultAdmin();
+    const users = [defaultAdmin];
+    saveUsers(users);
+    return users;
+  } catch (error) {
+    console.error('Error loading users from localStorage:', error);
+    // Возвращаем начального админа в случае ошибки
+    const defaultAdmin = initializeDefaultAdmin();
+    return [defaultAdmin];
   }
-  
-  // Если пользователей нет, создаем начального админа
-  const defaultAdmin = initializeDefaultAdmin();
-  const users = [defaultAdmin];
-  saveUsers(users);
-  return users;
 };
 
 // Сохранение пользователей в localStorage
 export const saveUsers = (users: User[]): void => {
-  localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+  try {
+    localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+  } catch (error) {
+    console.error('Error saving users to localStorage:', error);
+  }
 };
 
 // Загрузка текущего пользователя
 export const loadCurrentUser = (): User | null => {
-  const stored = localStorage.getItem(STORAGE_KEY_CURRENT_USER);
-  return stored ? JSON.parse(stored) : null;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_CURRENT_USER);
+    return stored ? JSON.parse(stored) : null;
+  } catch (error) {
+    console.error('Error loading current user from localStorage:', error);
+    return null;
+  }
 };
 
 // Сохранение текущего пользователя
 export const saveCurrentUser = (user: User | null): void => {
-  if (user) {
-    localStorage.setItem(STORAGE_KEY_CURRENT_USER, JSON.stringify(user));
-  } else {
-    localStorage.removeItem(STORAGE_KEY_CURRENT_USER);
+  try {
+    if (user) {
+      localStorage.setItem(STORAGE_KEY_CURRENT_USER, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(STORAGE_KEY_CURRENT_USER);
+    }
+  } catch (error) {
+    console.error('Error saving current user to localStorage:', error);
   }
 };
 

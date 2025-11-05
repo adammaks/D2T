@@ -70,6 +70,14 @@ const App: React.FC = () => {
       {showLogin && users.length > 0 && (
         <LoginModal onLogin={handleLogin} users={users} />
       )}
+      {showLogin && users.length === 0 && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-8 max-w-md w-full mx-4 shadow-xl">
+            <h2 className="text-3xl font-bold text-yellow-400 mb-6 text-center">Загрузка...</h2>
+            <p className="text-gray-300 text-center">Инициализация системы...</p>
+          </div>
+        </div>
+      )}
       <main className="container mx-auto px-4 py-8">
         {/* Always render TournamentView and pass admin props to enable/disable inline editing */}
         <TournamentView tournament={tournamentData} isAdminMode={isAdminMode} setTournament={setTournamentData} />
