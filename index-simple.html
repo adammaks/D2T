@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>adam_maks-tournament - Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white">
+    <div id="root">
+        <div style="padding: 20px; text-align: center;">
+            <h1 class="text-4xl font-bold text-yellow-400 mb-4">Тест подключения</h1>
+            <p class="text-xl">Если вы видите это сообщение, значит HTML и CSS работают.</p>
+            <p class="text-red-400 mt-4">React должен заменить этот текст!</p>
+        </div>
+    </div>
+    <script type="module">
+        console.log('Script loading...');
+        try {
+            import('/index.tsx').then(() => {
+                console.log('Module loaded successfully');
+            }).catch(err => {
+                console.error('Error loading module:', err);
+                document.getElementById('root').innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: white;">
+                        <h1 style="color: #ef4444;">Ошибка загрузки модуля</h1>
+                        <p>${err.message}</p>
+                        <p style="margin-top: 20px;">Убедитесь, что вы запускаете через: <code style="background: #1f2937; padding: 5px;">npm run dev</code></p>
+                    </div>
+                `;
+            });
+        } catch (err) {
+            console.error('Error:', err);
+            document.getElementById('root').innerHTML = `
+                <div style="padding: 20px; text-align: center; color: white;">
+                    <h1 style="color: #ef4444;">Критическая ошибка</h1>
+                    <p>${err.message}</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
