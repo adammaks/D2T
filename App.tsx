@@ -24,8 +24,10 @@ const App: React.FC = () => {
       const userExists = loadedUsers.find(u => u.id === loadedUser.id);
       if (userExists) {
         setCurrentUser(loadedUser);
+        setShowLogin(false);
       } else {
         saveCurrentUser(null);
+        setShowLogin(true);
       }
     } else {
       setShowLogin(true);
@@ -65,7 +67,7 @@ const App: React.FC = () => {
         onLogin={() => setShowLogin(true)} 
         onLogout={handleLogout} 
       />
-      {showLogin && (
+      {showLogin && users.length > 0 && (
         <LoginModal onLogin={handleLogin} users={users} />
       )}
       <main className="container mx-auto px-4 py-8">
