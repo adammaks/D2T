@@ -12,25 +12,34 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [showLogin, setShowLogin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Загружаем пользователей и текущего пользователя при загрузке
-    const loadedUsers = loadUsers();
-    const loadedUser = loadCurrentUser();
-    setUsers(loadedUsers);
-    
-    if (loadedUser) {
-      // Проверяем, что пользователь все еще существует в списке
-      const userExists = loadedUsers.find(u => u.id === loadedUser.id);
-      if (userExists) {
-        setCurrentUser(loadedUser);
-        setShowLogin(false);
+    try {
+      // Загружаем пользователей и текущего пользователя при загрузке
+      const loadedUsers = loadUsers();
+      const loadedUser = loadCurrentUser();
+      setUsers(loadedUsers);
+      
+      if (loadedUser) {
+        // Проверяем, что пользователь все еще существует в списке
+        const userExists = loadedUsers.find(u => u.id === loadedUser.id);
+        if (userExists) {
+          setCurrentUser(loadedUser);
+          setShowLogin(false);
+        } else {
+          saveCurrentUser(null);
+          setShowLogin(true);
+        }
       } else {
-        saveCurrentUser(null);
         setShowLogin(true);
       }
-    } else {
+    } catch (error) {
+      console.error('Error initializing app:', error);
+      // В случае ошибки показываем форму входа
       setShowLogin(true);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -60,6 +69,17 @@ const App: React.FC = () => {
 
   const isAdminMode = isModeratorOrAdmin(currentUser);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 font-sans flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-yellow-400 mb-4">Загрузка...</h2>
+          <p className="text-gray-300">Инициализация системы...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-900 font-sans">
       <Header 
@@ -69,14 +89,6 @@ const App: React.FC = () => {
       />
       {showLogin && users.length > 0 && (
         <LoginModal onLogin={handleLogin} users={users} />
-      )}
-      {showLogin && users.length === 0 && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-lg p-8 max-w-md w-full mx-4 shadow-xl">
-            <h2 className="text-3xl font-bold text-yellow-400 mb-6 text-center">Загрузка...</h2>
-            <p className="text-gray-300 text-center">Инициализация системы...</p>
-          </div>
-        </div>
       )}
       <main className="container mx-auto px-4 py-8">
         {/* Always render TournamentView and pass admin props to enable/disable inline editing */}
