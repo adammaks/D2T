@@ -8,25 +8,21 @@ import LoginModal from './components/LoginModal';
 import { loadUsers, loadCurrentUser, saveCurrentUser, isModeratorOrAdmin } from './utils/auth';
 
 const App: React.FC = () => {
-  console.log('App component rendering...');
-  
-  const [tournamentData] = useState<Tournament>(initialTournamentData);
+  const [tournamentData, setTournamentData] = useState<Tournament>(initialTournamentData);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-  const [showLogin, setShowLogin] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log('App useEffect running...');
     try {
+      // Загружаем пользователей и текущего пользователя при загрузке
       const loadedUsers = loadUsers();
-      console.log('Loaded users:', loadedUsers);
       const loadedUser = loadCurrentUser();
-      console.log('Loaded current user:', loadedUser);
-      
       setUsers(loadedUsers);
       
       if (loadedUser) {
+        // Проверяем, что пользователь все еще существует в списке
         const userExists = loadedUsers.find(u => u.id === loadedUser.id);
         if (userExists) {
           setCurrentUser(loadedUser);
@@ -40,15 +36,14 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error('Error initializing app:', error);
+      // В случае ошибки показываем форму входа
       setShowLogin(true);
     } finally {
-      setIsInitialized(true);
-      console.log('Initialization complete');
+      setIsLoading(false);
     }
   }, []);
 
   const handleLogin = (user: User) => {
-    console.log('Login handler called with:', user);
     setCurrentUser(user);
     saveCurrentUser(user);
     setShowLogin(false);
@@ -62,6 +57,7 @@ const App: React.FC = () => {
 
   const handleUsersUpdate = (updatedUsers: User[]) => {
     setUsers(updatedUsers);
+    // Если текущий пользователь был обновлен, обновляем его
     if (currentUser) {
       const updatedUser = updatedUsers.find(u => u.id === currentUser.id);
       if (updatedUser) {
@@ -72,11 +68,10 @@ const App: React.FC = () => {
   };
 
   const isAdminMode = isModeratorOrAdmin(currentUser);
-  console.log('Render state:', { isInitialized, showLogin, usersLength: users.length, currentUser: !!currentUser });
 
-  if (!isInitialized) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-900 font-sans flex items-center justify-center text-white">
+      <div className="min-h-screen bg-gray-900 font-sans flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-yellow-400 mb-4">Загрузка...</h2>
           <p className="text-gray-300">Инициализация системы...</p>
@@ -86,7 +81,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 font-sans text-white">
+    <div className="min-h-screen bg-gray-900 font-sans">
       <Header 
         currentUser={currentUser} 
         onLogin={() => setShowLogin(true)} 
@@ -96,13 +91,15 @@ const App: React.FC = () => {
         <LoginModal onLogin={handleLogin} users={users} />
       )}
       <main className="container mx-auto px-4 py-8">
-        <TournamentView tournament={tournamentData} isAdminMode={isAdminMode} setTournament={() => {}} />
+        {/* Always render TournamentView and pass admin props to enable/disable inline editing */}
+        <TournamentView tournament={tournamentData} isAdminMode={isAdminMode} setTournament={setTournamentData} />
         
+        {/* Conditionally render the AdminView for additional controls when in admin mode */}
         {isAdminMode && (
           <div className="mt-12">
              <AdminView 
                tournament={tournamentData} 
-               setTournament={() => {}}
+               setTournament={setTournamentData} 
                currentUser={currentUser}
                users={users}
                onUsersUpdate={handleUsersUpdate}

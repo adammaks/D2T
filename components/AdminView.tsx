@@ -1,12 +1,19 @@
-import React from 'react';
-import { Tournament, Match, MatchStatus, Team, Standing } from '../types';
+import React, { useState } from 'react';
+import { Tournament, Match, MatchStatus, Team, Standing, User, UserRole } from '../types';
+import { saveUsers, isAdmin } from '../utils/auth';
 
 interface AdminViewProps {
   tournament: Tournament;
   setTournament: React.Dispatch<React.SetStateAction<Tournament>>;
+  currentUser: User | null;
+  users: User[];
+  onUsersUpdate: (users: User[]) => void;
 }
 
-const AdminView: React.FC<AdminViewProps> = ({ tournament, setTournament }) => {
+const AdminView: React.FC<AdminViewProps> = ({ tournament, setTournament, currentUser, users, onUsersUpdate }) => {
+  const [showUserManagement, setShowUserManagement] = useState(false);
+  const [newModeratorUsername, setNewModeratorUsername] = useState('');
+  const [newModeratorPassword, setNewModeratorPassword] = useState('');
   const handleTournamentDetailsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTournament(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -56,10 +63,152 @@ const AdminView: React.FC<AdminViewProps> = ({ tournament, setTournament }) => {
     }));
   }
 
+  const handleCreateModerator = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const username = newModeratorUsername.trim();
+    const password = newModeratorPassword.trim();
+
+    if (!username || !password) {
+      alert('Пожалуйста, заполните все поля');
+      return;
+    }
+
+    if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+      alert('Пользователь с таким именем уже существует');
+      return;
+    }
+
+    const newModerator: User = {
+      id: `user-${Date.now()}`,
+      username: username,
+      password: password,
+      role: UserRole.MODERATOR,
+    };
+
+    const updatedUsers = [...users, newModerator];
+    saveUsers(updatedUsers);
+    onUsersUpdate(updatedUsers);
+    setNewModeratorUsername('');
+    setNewModeratorPassword('');
+    alert('Модератор успешно создан!');
+  }
+
+  const handleDeleteUser = (userId: string) => {
+    if (userId === currentUser?.id) {
+      alert('Вы не можете удалить самого себя');
+      return;
+    }
+
+    if (!confirm('Вы уверены, что хотите удалить этого пользователя?')) {
+      return;
+    }
+
+    const updatedUsers = users.filter(u => u.id !== userId);
+    saveUsers(updatedUsers);
+    onUsersUpdate(updatedUsers);
+  }
+
+
+  const canManageUsers = isAdmin(currentUser);
 
   return (
     <div className="bg-gray-800 p-6 rounded-lg shadow-xl space-y-8">
-      <h2 className="text-3xl font-bold text-yellow-400">Admin Panel</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-yellow-400">Admin Panel</h2>
+        {canManageUsers && (
+          <button
+            onClick={() => setShowUserManagement(!showUserManagement)}
+            className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-md transition-colors"
+          >
+            {showUserManagement ? 'Скрыть управление пользователями' : 'Управление пользователями'}
+          </button>
+        )}
+      </div>
+
+      {/* User Management Section - Only for Admins */}
+      {canManageUsers && showUserManagement && (
+        <div className="space-y-4 border-t border-gray-600 pt-6">
+          <h3 className="text-xl font-semibold border-b border-gray-600 pb-2">Управление пользователями</h3>
+          
+          {/* Create Moderator Form */}
+          <div className="bg-gray-700 p-4 rounded-md">
+            <h4 className="text-lg font-semibold mb-3 text-yellow-400">Создать модератора</h4>
+            <form onSubmit={handleCreateModerator} className="space-y-3">
+              <div>
+                <label htmlFor="modUsername" className="block text-sm font-medium text-gray-300 mb-1">
+                  Имя пользователя
+                </label>
+                <input
+                  type="text"
+                  id="modUsername"
+                  value={newModeratorUsername}
+                  onChange={(e) => setNewModeratorUsername(e.target.value)}
+                  className="w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm text-white"
+                  placeholder="Введите имя пользователя"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="modPassword" className="block text-sm font-medium text-gray-300 mb-1">
+                  Пароль
+                </label>
+                <input
+                  type="password"
+                  id="modPassword"
+                  value={newModeratorPassword}
+                  onChange={(e) => setNewModeratorPassword(e.target.value)}
+                  className="w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm text-white"
+                  placeholder="Введите пароль"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="bg-yellow-500 text-gray-900 font-bold py-2 px-4 rounded-md hover:bg-yellow-400 transition-colors"
+              >
+                Создать модератора
+              </button>
+            </form>
+          </div>
+
+          {/* Users List */}
+          <div className="bg-gray-700 p-4 rounded-md">
+            <h4 className="text-lg font-semibold mb-3 text-yellow-400">Список пользователей</h4>
+            <div className="space-y-2">
+              {users.map(user => (
+                <div
+                  key={user.id}
+                  className="flex justify-between items-center bg-gray-900 p-3 rounded-md"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="font-semibold text-white">{user.username}</span>
+                    <span className={`text-sm font-semibold ${
+                      user.role === UserRole.ADMIN ? 'text-red-400' :
+                      user.role === UserRole.MODERATOR ? 'text-yellow-400' :
+                      'text-gray-400'
+                    }`}>
+                      {user.role === UserRole.ADMIN ? 'Админ' :
+                       user.role === UserRole.MODERATOR ? 'Модератор' :
+                       'Пользователь'}
+                    </span>
+                    {user.id === currentUser?.id && (
+                      <span className="text-xs text-gray-500">(Вы)</span>
+                    )}
+                  </div>
+                  {user.id !== currentUser?.id && (
+                    <button
+                      onClick={() => handleDeleteUser(user.id)}
+                      className="text-red-500 hover:text-red-400 font-semibold text-sm"
+                    >
+                      Удалить
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tournament Details */}
       <div className="space-y-4">
